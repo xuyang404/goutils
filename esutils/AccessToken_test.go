@@ -1,11 +1,13 @@
 package esutils_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/xuyang404/goutils/esutils"
 	"github.com/xuyang404/goutils/esutils/OfficialAccount"
 	"github.com/xuyang404/goutils/esutils/OpenPlatform"
+	"io/ioutil"
 	"log"
 	"testing"
 )
@@ -25,7 +27,14 @@ func TestOpenPlatform(t *testing.T) {
 	rdb := getRedis()
 	cache := esutils.NewDefaultCache(rdb)
 	esutils.SetCache(cache)
-	manager := OpenPlatform.NewCredentials("", "", "")
+	b,err := ioutil.ReadFile("config.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := make(map[string]string)
+	json.Unmarshal(b, &data)
+	fmt.Println(data)
+	manager := OpenPlatform.NewCredentials(data["appid"], data["authAppid"], data["refreshToken"])
 	fmt.Println(manager.GetCacheKey())
 	ticket, err := manager.GetTicket()
 	if err != nil {

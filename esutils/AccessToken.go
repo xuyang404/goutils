@@ -66,7 +66,6 @@ func GetCacheKey(a interface{}) (string, error) {
 
 func getCredentials(a interface{}) (cre []byte, err error) {
 	cre, err = json.Marshal(a)
-	fmt.Println("json", string(cre))
 	if err != nil {
 		return nil, err
 	}
