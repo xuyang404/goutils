@@ -1,4 +1,4 @@
-package gpool
+package WaitGo
 
 import (
 	"fmt"
@@ -9,43 +9,40 @@ import (
 
 var lock sync.Mutex
 
-type Pool struct {
-	queue        chan struct{}
-	worker       chan func()
+type WaitGo struct {
+	token        chan struct{}
+	cap          int
 	PanicHandler func(interface{})
-	Recover      bool
 }
 
-func NewPool(cap int) *Pool {
-	return &Pool{
-		queue:        make(chan struct{}, cap),
-		worker:       make(chan func()),
-		PanicHandler: nil,
-		Recover:      true,
+func NewWaitGo(cap int) *WaitGo {
+	gp := &WaitGo{
+		token: make(chan struct{}, cap),
+		cap:   cap,
 	}
-}
 
-func (p *Pool) Add(task func()) {
-	select {
-	case p.worker <- task:
-	case p.queue <- struct{}{}:
-		go p.work(task)
+	for i := 0; i < gp.cap; i++ {
+		gp.token <- struct{}{}
 	}
+
+	return gp
 }
 
-func (p *Pool) work(task func()) {
-	defer func() {
-		if p.Recover {
+func (gp *WaitGo) Add(task func()) {
+	<-gp.token
+	go func() {
+		defer func() {
+			gp.token <- struct{}{}
 			if r := recover(); r != nil {
 				pc, file, line, ok := runtime.Caller(3)
 				if ok {
-					if p.PanicHandler != nil {
-						p.PanicHandler(r)
+					if gp.PanicHandler != nil {
+						gp.PanicHandler(r)
 					} else {
 						//log.Printf("task paniced: %s", r)
 						lock.Lock()
 						funcName := runtime.FuncForPC(pc).Name()
-						fmt.Println("[goutils.gpool]")
+						fmt.Println("[goutils.waitGo]")
 						fmt.Println("-------------------------------------------------------------------")
 						fmt.Println("time", time.Now().Format("2006-01-02 15:04:05"))
 						fmt.Println("func", funcName)
@@ -57,12 +54,16 @@ func (p *Pool) work(task func()) {
 					}
 				}
 			}
-		}
-		<-p.queue
-	}()
+		}()
 
-	for {
 		task()
-		task = <-p.worker
+	}()
+}
+
+func (gp *WaitGo) Wait() {
+	for i := 0; i < gp.cap; i++ {
+		<-gp.token
 	}
+
+	close(gp.token)
 }

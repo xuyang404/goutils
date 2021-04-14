@@ -15,10 +15,10 @@ var runTimes = 1000000
 
 func TestPoolRecover (t *testing.T) {
 	p := gpool.NewPool(20)
-	p.Recover = false
-	p.PanicHandler = func(r interface{}) {
-		fmt.Println(r)
-	}
+	//p.Recover = false
+	//p.PanicHandler = func(r interface{}) {
+	//	fmt.Println(r)
+	//}
 
 	for i := 0; i < 10; i++ {
 		wg.Add(1)

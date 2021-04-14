@@ -200,7 +200,8 @@ func (r *Request) buildClient() (*Request, error) {
 		if err != nil {
 			return r, err
 		}
-		//r.client = &http.Client{
+		//r.client
+		//client = &http.Client{
 		//	Transport:     t,
 		//	CheckRedirect: r.checkRedirect,
 		//	Jar:           r.jar,
